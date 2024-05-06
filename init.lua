@@ -22,8 +22,22 @@ vim.g.loaded_netrwPlugin = 1
 
 vim.opt.termguicolors = true
 vim.opt.background = 'dark'
+vim.opt.fillchars = { eob = ' ' }
 
 vim.g.VimuxHeight = '25'
+
+-- Enable wrapping of lines
+vim.o.wrap = true
+
+-- Stop lines from breaking in the middle of words
+vim.o.linebreak = true
+
+-- Set a visual indicator for wrapped lines
+--vim.o.showbreak = '↪\\'
+
+-- Visual line navigation
+vim.api.nvim_set_keymap('n', 'j', 'gj', { noremap = true, silent = true })
+vim.api.nvim_set_keymap('n', 'k', 'gk', { noremap = true, silent = true })
 
 -- Set <space> as the leader key
 -- See `:help mapleader`
@@ -113,6 +127,7 @@ vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, { desc = 'Show diagn
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
 vim.api.nvim_set_keymap('n', '<F5>', ':!node %<CR>', { noremap = true, silent = true })
 
+-- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
 -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
 -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
 -- is not what someone will guess without a bit more experience.
@@ -893,7 +908,6 @@ function TmuxSendCurrDir()
     vim.cmd 'silent !tmux send-keys -R C-l'
   end, 250)
 end
-
 vim.keymap.set('n', '<leader>cd', ':lua TmuxSendCurrDir()<CR>', { noremap = true, silent = true, desc = 'Send current directory to tmux and focus pane' })
 
 -- The line beneath this is called `modeline`. See `:help modeline`
