@@ -20,6 +20,11 @@
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
 
+vim.opt.termguicolors = true
+vim.opt.background = 'dark'
+
+vim.g.VimuxHeight = '25'
+
 -- Set <space> as the leader key
 -- See `:help mapleader`
 --  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
@@ -38,7 +43,7 @@ vim.g.have_nerd_font = true
 vim.opt.number = true
 -- You can also add relative line numbers, to help with jumping.
 --  Experiment for yourself to see if you like it!
--- vim.opt.relativenumber = true
+vim.opt.relativenumber = true
 
 -- Enable mouse mode, can be useful for resizing splits for example!
 vim.opt.mouse = 'a'
@@ -90,6 +95,10 @@ vim.opt.cursorline = true
 -- Minimal number of screen lines to keep above and below the cursor.
 vim.opt.scrolloff = 10
 
+vim.opt.title = true
+
+vim.opt.smartindent = true
+
 -- [[ Basic Keymaps ]]
 --  See `:help vim.keymap.set()`
 
@@ -102,6 +111,7 @@ vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = 'Go to previous [D]
 vim.keymap.set('n', ']d', vim.diagnostic.goto_next, { desc = 'Go to next [D]iagnostic message' })
 vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, { desc = 'Show diagnostic [E]rror messages' })
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
+vim.api.nvim_set_keymap('n', '<F5>', ':!node %<CR>', { noremap = true, silent = true })
 
 -- Exit terminal mode in the builtin terminal with a shortcut that is a bit easier
 -- for people to discover. Otherwise, you normally need to press <C-\><C-n>, which
@@ -192,45 +202,6 @@ require('lazy').setup({
         changedelete = { text = '~' },
       },
     },
-  },
-  -- Monokai theme setup
-  {
-    'loctvl842/monokai-pro.nvim',
-    config = function()
-      require('monokai-pro').setup {
-        filter = 'pro',
-        transparent_background = false,
-        terminal_colors = true,
-        styles = {
-          comments = 'italic',
-          keywords = 'italic',
-          functions = 'none',
-        },
-        override = function(c)
-          return {
-            Normal = { bg = '#1e1d21', fg = c.foreground },
-            VertSplit = { bg = '#1e1d21', fg = '#1e1d21' },
-            StatusLine = { bg = '#1e1d21', fg = c.foreground },
-            StatusLineNC = { bg = '#1e1d21', fg = '#505050' },
-            TabLine = { bg = '#1e1d21', fg = '#505050' },
-            TabLineSel = { bg = '#1b1a1e', fg = '#ffffff' },
-            TabLineFill = { bg = '#1e1d21' },
-            Pmenu = { bg = '#141316', fg = c.foreground },
-            PmenuSel = { bg = '#0e0d10', fg = '#ffffff' },
-            PmenuSbar = { bg = '#141316' },
-            PmenuThumb = { bg = '#0e0d0f' },
-            Sidebar = { bg = '#141316', fg = c.foreground },
-            FloatBorder = { bg = '#1e1d21', fg = '#ffffff' },
-            DiagnosticVirtualTextError = { bg = 'none' },
-            DiagnosticVirtualTextWarn = { bg = 'none' },
-            DiagnosticVirtualTextInfo = { bg = 'none' },
-            DiagnosticVirtualTextHint = { bg = 'none', fg = 'Gray' },
-            DiagnosticSignHint = { fg = 'Gray' },
-          }
-        end,
-      }
-      vim.cmd 'colorscheme monokai-pro'
-    end,
   },
   -- Lualine (status bar)
   {
@@ -561,7 +532,7 @@ require('lazy').setup({
         --    https://github.com/pmizio/typescript-tools.nvim
         --
         -- But for many setups, the LSP (`tsserver`) will work just fine
-        -- tsserver = {},
+        tsserver = {},
         --
 
         lua_ls = {
@@ -643,7 +614,7 @@ require('lazy').setup({
         --
         -- You can use a sub-list to tell conform to run *until* a formatter
         -- is found.
-        -- javascript = { { "prettierd", "prettier" } },
+        javascript = { { 'prettierd', 'prettier' } },
       },
     },
   },
@@ -715,7 +686,7 @@ require('lazy').setup({
           -- Accept ([y]es) the completion.
           --  This will auto-import if your LSP supports it.
           --  This will expand snippets if the LSP sent a snippet.
-          ['<C-y>'] = cmp.mapping.confirm { select = true },
+          ['<C-j>'] = cmp.mapping.confirm { select = true },
 
           -- If you prefer more traditional completion keymaps,
           -- you can uncomment the following lines
@@ -859,15 +830,20 @@ require('lazy').setup({
   --  Here are some example plugins that I've included in the Kickstart repository.
   --  Uncomment any of the lines below to enable them (you will need to restart nvim).
   --
-  -- require 'kickstart.plugins.debug',
+  require 'custom.plugins.debug',
   require 'custom.plugins.indent_line',
-  -- require 'kickstart.plugins.lint',
-  -- require 'kickstart.plugins.autopairs',
-  -- require 'kickstart.plugins.devicons'
+  require 'custom.plugins.lint',
+  require 'custom.plugins.autopairs',
   require 'custom.plugins.nvim-tree',
   require 'custom.plugins.copilot',
-
-  -- require 'kickstart.plugins.gitsigns', -- adds gitsigns recommend keymaps
+  require 'custom.plugins.gitsigns',
+  require 'custom.plugins.monokai-pro-theme',
+  require 'custom.plugins.bufferline',
+  require 'custom.plugins.vimtmuxnav',
+  require 'custom.plugins.vimux',
+  require 'custom.plugins.nvimcolorizer',
+  require 'custom.plugins.lazygit',
+  require 'custom.plugins.nvim-scrollbar',
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
@@ -897,12 +873,29 @@ require('lazy').setup({
   },
 })
 
+function RunCurrentJSFile()
+  local file_path = vim.fn.expand '%:p'
+  if vim.fn.filereadable(file_path) == 1 then
+    local command = "clear; node '" .. file_path .. "'"
+    vim.cmd('VimuxRunCommand "' .. command .. '"')
+  else
+    print 'File does not exist or is not readable'
+  end
+end
+
+vim.keymap.set('n', '<leader>n', ':w<CR>:lua RunCurrentJSFile()<CR>', { noremap = true, silent = true, desc = 'Save and run current JS file' })
+
+function TmuxSendCurrDir()
+  local file_dir = vim.fn.expand '%:p:h'
+  vim.cmd('VimuxRunCommand "cd \'' .. file_dir .. '\' && exec zsh"')
+  vim.defer_fn(function()
+    vim.cmd 'silent !tmux select-pane -D'
+    vim.cmd 'silent !tmux send-keys -R C-l'
+  end, 250)
+end
+
+vim.keymap.set('n', '<leader>cd', ':lua TmuxSendCurrDir()<CR>', { noremap = true, silent = true, desc = 'Send current directory to tmux and focus pane' })
+
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
 --
---
---
---
--- vim.cmd [[
--- autocmd VimEnter * NvimTreeOpen
--- ]]
