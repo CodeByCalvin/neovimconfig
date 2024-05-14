@@ -20,16 +20,21 @@ return {
         sorter = 'case_sensitive',
       },
       view = {
-        width = 25,
+        width = 30,
         number = false,
       },
       renderer = {
         group_empty = true,
       },
       filters = {
-        dotfiles = true,
+        dotfiles = false,
+        custom = { '^\\.git', '^\\.DS_Store$', '^next-env\\.d\\.ts$' }, -- Hide .git, .DS_Store, and next-env.d.ts files
       },
       on_attach = my_on_attach,
+
+      git = {
+        ignore = false,
+      },
     }
 
     local function open_nvim_tree(data)
