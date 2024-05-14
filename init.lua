@@ -14,6 +14,8 @@
     reference for how Neovim integrates Lua
     - :help lua-guide
     I- (or HTML version): https://neovim.io/doc/user/lua-guide.html
+-- :Lazy
+-- :Lazy update
 --]]
 
 -- Disable netew for Nvim-tree
@@ -25,9 +27,10 @@ vim.opt.background = 'dark'
 vim.opt.fillchars = { eob = ' ' }
 
 vim.g.VimuxHeight = '25'
-
+vim.diagnostic.config { virtual_text = false }
 -- Enable wrapping of lines
 vim.o.wrap = true
+vim.wo.wrap = true
 
 -- Stop lines from breaking in the middle of words
 vim.o.linebreak = true
@@ -174,19 +177,9 @@ if not vim.loop.fs_stat(lazypath) then
 end ---@diagnostic disable-next-line: undefined-field
 vim.opt.rtp:prepend(lazypath)
 
--- [[ Configure and install plugins ]]
---
---  To check the current status of your plugins, run
---    :Lazy
---
---  You can press `?` in this menu for help. Use `:q` to close the window
---
 --  To update plugins you can run
 --    :Lazy update
---
--- NOTE: Here is where you install your plugins.
 require('lazy').setup({
-  -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
   'tpope/vim-sleuth', -- Detect tabstop and shiftwidth automatically
 
   -- NOTE: Plugins can also be added by using a table,
@@ -324,7 +317,32 @@ require('lazy').setup({
         --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
         --   },
         -- },
-        -- pickers = {}
+
+        pickers = {
+          find_files = {
+            hidden = true, -- Include hidden files
+            no_ignore = true, -- Consider .gitignore files
+            find_command = {
+              'rg',
+              '--files',
+              '--hidden', -- Include hidden files
+              '--glob',
+              '!.git/', -- Exclude .git folder
+              '--glob',
+              '!node_modules/**', -- Exclude node_modules folder
+              '--glob',
+              '!**/node_modules/**', -- Exclude nested node_modules folders
+              '--glob',
+              '!.DS_Store', -- Exclude .DS_Store files
+              '--glob',
+              '!next-env.d.ts', -- Exclude next-env.d.ts file
+              '--glob',
+              '!.next/**', -- Exclude .next folder
+              '--glob',
+              '!**/.next/**', -- Exclude nested .next folders
+            },
+          },
+        },
         extensions = {
           ['ui-select'] = {
             require('telescope.themes').get_dropdown(),
@@ -349,6 +367,10 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
       vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
 
+      -- Find hidden files AND .gitignored files
+
+      vim.api.nvim_set_keymap('n', '<Leader>ff', ':lua require"telescope.builtin".find_files()<CR>', { noremap = true, silent = true })
+
       -- Slightly advanced example of overriding default behavior and theme
       vim.keymap.set('n', '<leader>/', function()
         -- You can pass additional configuration to Telescope to change the theme, layout, etc.
@@ -367,13 +389,28 @@ require('lazy').setup({
         }
       end, { desc = '[S]earch [/] in Open Files' })
 
+      local actions = require 'telescope.actions'
+      local open_with_trouble = require('trouble.sources.telescope').open
+
+      -- Use this to add more results without clearing the trouble list
+      local add_to_trouble = require('trouble.sources.telescope').add
+
+      local telescope = require 'telescope'
+
+      telescope.setup {
+        defaults = {
+          mappings = {
+            i = { ['<c-t>'] = open_with_trouble },
+            n = { ['<c-t>'] = open_with_trouble },
+          },
+        },
+      }
       -- Shortcut for searching your Neovim configuration files
       vim.keymap.set('n', '<leader>sn', function()
         builtin.find_files { cwd = vim.fn.stdpath 'config' }
       end, { desc = '[S]earch [N]eovim files' })
     end,
   },
-
   { -- LSP Configuration & Plugins
     'neovim/nvim-lspconfig',
     dependencies = {
@@ -856,9 +893,10 @@ require('lazy').setup({
   require 'custom.plugins.bufferline',
   require 'custom.plugins.vimtmuxnav',
   require 'custom.plugins.vimux',
-  require 'custom.plugins.nvimcolorizer',
   require 'custom.plugins.lazygit',
   require 'custom.plugins.nvim-scrollbar',
+  require 'custom.plugins.trouble',
+  require 'custom.plugins.tailwind-tool',
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
   --    This is the easiest way to modularize your config.
@@ -909,7 +947,6 @@ function TmuxSendCurrDir()
   end, 250)
 end
 vim.keymap.set('n', '<leader>cd', ':lua TmuxSendCurrDir()<CR>', { noremap = true, silent = true, desc = 'Send current directory to tmux and focus pane' })
-
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
 --
